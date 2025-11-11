@@ -91,7 +91,7 @@ from tensorflow.keras.layers import GlobalAveragePooling2D, Dropout, Dense, Inpu
 MODEL_PATH = r"C:/Users/HP/last modle v/final_web_compatible_model.h5" 
 LAST_CONV_LAYER_NAME = "efficientnetb0" 
 TARGET_SIZE = (224, 224)
-API_URL = "http://127.0.0.1:8000/predict"
+API_URL = "https://amany-s-lung-cancer-api-fastapi.hf.space/predict"
 
 # -----------------------------------------------------------
 # 🛑 دالة تحميل الأوزان وبناء النموذج النظيف
