@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lung Disease Prediction (FastAPI & Grad-CAM)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #upload-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        #loading-message {
+            color: #ff9800;
+            font-weight: bold;
+            display: none;
+        }
+        .result-box {
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+            text-align: center;
+        }
+        #result-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .image-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .image-box {
+            width: 45%;
+            text-align: center;
+        }
+        .image-box img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lung Disease Prediction (COVID-19/Pneumonia)</h1>
+        
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" id="file-input" name="file" accept="image/*" required>
+            <button type="submit">Get Prediction & Grad-CAM</button>
+            <div id="loading-message">Processing... Please wait (Can take 10-20 seconds)</div>
+        </form>
+
+        <div class="result-box">
+            <h2>Prediction Result:</h2>
+            <p id="result-text">Upload an image to start analysis.</p>
+
+            <div class="image-container">
+                <div class="image-box">
+                    <h3>Original Image:</h3>
+                    <img id="original_img" src="" alt="Original X-ray" style="display:none;">
+                </div>
+                <div class="image-box">
+                    <h3>Grad-CAM Heatmap:</h3>
+                    <img id="gradcam_img" src="" alt="Grad-CAM Result" style="display:none;">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const fileInput = document.getElementById('file-input');
+            const resultText = document.getElementById('result-text');
+            const loadingMessage = document.getElementById('loading-message');
+            const originalImg = document.getElementById('original_img');
+            const gradcamImg = document.getElementById('gradcam_img');
+
+            if (fileInput.files.length === 0) {
+                alert('Please select an image file.');
+                return;
+            }
+
+            // 1. إظهار رسالة التحميل
+            resultText.innerText = 'Analyzing...';
+            loadingMessage.style.display = 'block';
+            originalImg.style.display = 'none';
+            gradcamImg.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            // 🛑 عرض الصورة الأصلية فورًا (استخدام FileReader)
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImg.src = e.target.result;
+                originalImg.style.display = 'block';
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+
+            // 2. إرسال الطلب إلى الـ API
+            try {
+                const response = await fetch('/predict_gradcam', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // 🛑 التعامل مع الاستجابة (يجب أن تكون 200 OK)
+                if (!response.ok) {
+                    // إذا لم تكن 200 OK، إظهار خطأ واضح
+                    resultText.innerText = `Error: Server responded with status ${response.status}. Check Uvicorn console for details.`;
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // 🛑 3. عرض النتائج (التأكد من أسماء المفاتيح)
+                resultText.innerText = data.prediction;
+                
+                // يتم إرسال صورة Grad-CAM كبيانات مشفرة بـ Base64
+                // المفتاح يجب أن يكون 'gradcam_image' كما في كود main_api.py
+                if (data.gradcam_image) {
+                    gradcamImg.src = data.gradcam_image; // يجب أن يحتوي على البادئة data:image/png;base64,
+                    gradcamImg.style.display = 'block';
+                } else {
+                    resultText.innerText += ' (Error: Grad-CAM image not received.)';
+                }
+
+            } catch (error) {
+                // خطأ في الشبكة أو الاتصال (وهو ما ظهر لكِ سابقًا)
+                resultText.innerText = `Error in API connection or processing. Details: ${error.message}.`;
+                console.error('API Error:', error);
+
+            } finally {
+                // إخفاء رسالة التحميل
+                loadingMessage.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
