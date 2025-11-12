@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # 🚨 الرابط الصحيح لنقطة نهاية FastAPI على Hugging Face Spaces
-API_URL = "https://lung-cancer-api-fastapi.hf.space/predict"
-
+API_URL = "https://amany-s-lung-cancer-api-fastapi.hf.space/"
 st.set_page_config(
     page_title="تطبيق تنبؤ سرطان الرئة (الواجهة البسيطة)",
     layout="centered",
