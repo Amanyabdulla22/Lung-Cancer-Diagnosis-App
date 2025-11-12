@@ -1,0 +1,3 @@
+[runner]
+# Use Python 3.10 for better dependency compatibility
+python_version = "3.10"
